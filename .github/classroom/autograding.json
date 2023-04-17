@@ -1,0 +1,44 @@
+{
+  "tests": [
+    {
+      "name": "50",
+      "setup": "sudo -H pip3 install pytest numpy",
+      "run": "pytest tests/test01.py",
+      "input": "",
+      "output": "",
+      "comparison": "included",
+      "timeout": 5,
+      "points": 50
+    },
+    {
+      "name": "20",
+      "setup": "sudo -H pip3 install pytest numpy",
+      "run": "pytest tests/test02.py",
+      "input": "",
+      "output": "",
+      "comparison": "included",
+      "timeout": 2,
+      "points": 20
+    },
+    {
+      "name": "30",
+      "setup": "sudo -H pip3 install pytest numpy",
+      "run": "pytest tests/test03.py",
+      "input": "",
+      "output": "",
+      "comparison": "included",
+      "timeout": 10,
+      "points": 30
+    },
+    {
+      "name": "5",
+      "setup": "sudo -H pip3 install pytest numpy",
+      "run": "pytest tests/test04.py",
+      "input": "",
+      "output": "",
+      "comparison": "included",
+      "timeout": 10,
+      "points": 5
+    }
+  ]
+}
