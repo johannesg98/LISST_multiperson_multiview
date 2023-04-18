@@ -167,9 +167,17 @@ class LISSTRecOP():
         # - Based on the camera intrinsics, convert J_rec_cam to J_rec_proj, which has the 2D joint locations in the image planes. 
         # - if encountering tensor shape misalignment, you could print these tensor shapes for debugging.
         # - please use our file `data/test_img_project_loss_data.pkl` to test the keypoint detection. 
-        J_rec_proj = None
+        #J_rec_proj = None
         # =======================================
-       
+
+
+        ones = torch.ones(J_rec.size()[0], J_rec.size()[1], J_rec.size()[2],1)
+        J_rec = torch.cat([J_rec, ones], dim = -1).transpose(2,3)
+        ext_mat = torch.cat([cam_rotmat, cam_transl.transpose(1,2)], dim=-1)
+        J_rec_cam = torch.matmul(ext_mat, J_rec)
+        J_rec_proj_unorm = torch.matmul(cam_K, J_rec_cam).transpose(2,3)
+        J_rec_proj = J_rec_proj_unorm[:,:,:,0:2]/J_rec_proj_unorm[:,:,:,2].unsqueeze(-1)
+        
         
         return J_rec_proj
 
@@ -298,6 +306,12 @@ class LISSTRecOP():
             # - In late stages, we optimize both the global and the local body parameters.
             # Multistages can be implemented by enabling/disabling updating certain variables.
             # =======================================
+
+            lateStage = 0
+            if jj > 0.3 * n_iter:
+                lateStage = 1
+                J_rotlatent.requires_grad = True
+                betas.requires_grad=True
         
             
             ss = time.time()
@@ -316,7 +330,13 @@ class LISSTRecOP():
             # Hints:
             # - minimize the l1/l2 norm of the joint location velocity
             # - minimize the l1/l2 norm of the joint rotation velocity
-            loss_smoothness = torch.zeros(1).float().to(self.device)
+            #loss_smoothness = torch.zeros(1).float().to(self.device)
+
+            loc_loss = (J_rec_fk[1:, ...] - J_rec_fk[:-1, ...]).abs().mean()
+            rot_loss = (J_rotcont[1:, ...] - J_rotcont[:-1, ...]).abs().mean()
+
+            loss_smoothness = self.weight_smoothness * (loc_loss + rot_loss)
+
             # =======================================
             
             #shape regularization, encouraging to produce mean shape.
@@ -331,7 +351,7 @@ class LISSTRecOP():
                                     cam_rotmat, cam_transl, cam_K)
                         
             # print(loss_rec.item())
-            loss = loss_sprior + loss_pprior + loss_rec + loss_smoothness
+            loss = loss_rec + lateStage * (loss_sprior + loss_pprior) + loss_smoothness
             '''optimizer'''
             ss = time.time()
             optimizer.zero_grad()
@@ -446,7 +466,7 @@ class LISSTRecOP():
 
 if __name__ == '__main__':
     """ example command
-    python scripts/app_multiview_mocap_ZJUMocap.py --cfg_shaper=LISST_SHAPER_v2 --cfg_poser=LISST_POSER_v0 --data_path=data/CoreView_313
+    python scripts/app_multiview_mocap_ZJUMocap.py --cfg_shaper=LISST_SHAPER_v2 --cfg_poser=LISST_POSER_v0 --data_path=data
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg_shaper', default=None, required=True)

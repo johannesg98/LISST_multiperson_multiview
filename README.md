@@ -9,10 +9,10 @@ Hand-in: 20 April 2023, 14:00 CET
 
 Leave your name, student ID, ETH email address and the URL link to your motion capture result video here.
 
-- Name:
-- Student ID:
-- ETH Email:
-- URL:
+- Name: Johannes Gaber
+- Student ID: 22-938-088
+- ETH Email: jgaber@student.ethz.ch
+- URL: https://youtu.be/jiB9P3dQ0Gs
 
 ----
 
