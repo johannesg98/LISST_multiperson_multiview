@@ -53,7 +53,7 @@ class LISSTCore(nn.Module):
         
     def load(self, model_path, verbose=True,
              build_parent_table=False):
-        ckpt = torch.load(model_path)
+        ckpt = torch.load(model_path, map_location=torch.device('cpu'))
         self.joint_names = ckpt['joint_names']
         self.children_table = ckpt['children_table']
         self.load_state_dict(ckpt['model_state_dict'])
@@ -312,7 +312,7 @@ class LISSTPoser(VAE):
         Args:
             ckpt_path (str): the absolute path of the checkpoint path
         """
-        checkpoint = torch.load(ckpt_path)['model_state_dict']
+        checkpoint = torch.load(ckpt_path, map_location=torch.device('cpu'))['model_state_dict']
         self.load_state_dict(checkpoint)
         if verbose:
             print('-- successfully loaded: '+ckpt_path)

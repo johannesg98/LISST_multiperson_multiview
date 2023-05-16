@@ -13,7 +13,7 @@ class ConfigCreator(object):
             cfg_name (str): the config name, e.g. `LISST_SHAPER_v0` rather than the filepath
         """
         self.cfg_name = cfg_name
-        exppath = os.path.join( *(__file__.split('/')[:-2]) )
+        exppath = os.path.join( *(__file__.split('\\')[1:-2]) )
         cfg_file = os.path.join('/',exppath,'cfg','{:s}.yml'.format(cfg_name))
         expname = os.path.basename(exppath)
         
