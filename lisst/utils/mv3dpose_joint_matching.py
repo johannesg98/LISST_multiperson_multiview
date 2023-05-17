@@ -1,0 +1,37 @@
+#mv3dpose skips the root (8) from openpose -> 24(mv3dpose) instead of 25(openpose) keypoints
+LISST_TO_MV3DPOSE={ 
+                'root': [],
+                'lhipjoint': [11],
+                'lfemur': [12],
+                'ltibia':[13],
+                'lfoot':[13, 18],
+                'ltoes':[18, 19],
+                'rhipjoint':[8],
+                'rfemur':[9],
+                'rtibia':[10],
+                'rfoot':[10, 21],
+                'rtoes':[21, 22],
+                'lowerback': [],
+                'upperback':[],
+                'thorax':[],
+                'lowerneck':[1],
+                'upperneck':[],
+                'head':[16, 17],
+                'lclavicle':[5],
+                'lhumerus':[6],
+                'lradius':[7],  #same as wrist like in CMU, maybe 6,7 better?
+                'lwrist':[7],   #
+                'lhand':[],
+                'lfingers':[],
+                'lthumb':[],
+                'rclavicle':[2],
+                'rhumerus':[3],
+                'rradius':[4],
+                'rwrist':[4],
+                'rhand':[],
+                'rfingers':[],
+                'rthumb':[],            
+                'nose': [0],
+                'lheel':[20],
+                'rheel': [23]
+        }

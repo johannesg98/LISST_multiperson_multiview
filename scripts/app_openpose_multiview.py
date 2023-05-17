@@ -21,7 +21,7 @@ from lisst.utils.joint_matching import LISST_TO_MEDIAPOSE
 from lisst.models.baseops import (RotConverter, get_scheduler)
 from lisst.models.body import LISSTPoser, LISSTCore
 
-
+from lisst.utils.mv3dpose_joint_matching import LISST_TO_MV3DPOSE
 
 
 
@@ -262,19 +262,19 @@ class LISSTRecOP():
             None
         """
 
-        print(poses)
         
-        #obtain the 2D joint locations corresponding to the CMU joints.
-        # traj_idx = []
-        # traj = []
-        # for key, val in LISST_TO_MEDIAPOSE.items():
-        #     if len(val) == 0:
-        #         continue
-        #     else:
-        #         traj_idx.append(self.shaper.joint_names.index(key))
-        #         traj.append(motion_obs[:,:,val].mean(dim=-2, keepdim=True))
-        # traj = torch.cat(traj, dim=-2)
-        # nt, nb = traj.shape[:2]
+        
+        #obtain the 2D joint locations corresponding to the openpose/mv3dpose joints.
+        traj_idx = []
+        traj = []
+        for key, val in LISST_TO_MV3DPOSE.items():
+            if len(val) == 0:
+                continue
+            else:
+                traj_idx.append(self.shaper.joint_names.index(key))
+                traj.append(motion_obs[:,:,val].mean(dim=-2, keepdim=True))
+        traj = torch.cat(traj, dim=-2)
+        nt, nb = traj.shape[:2]
 
         nt = poses.shape[0]
     
@@ -352,8 +352,8 @@ class LISSTRecOP():
             
 
             '''image reprojection loss'''
-            # loss_rec = self.img_project_loss(traj, J_rec_fk[:,:,traj_idx], 
-            #                         cam_rotmat, cam_transl, cam_K)
+            loss_rec = self.img_project_loss(traj, J_rec_fk[:,:,traj_idx], 
+                                     cam_rotmat, cam_transl, cam_K)
             
             loss_rec = self.threeD_point_loss(poses, J_rec_fk)
                         
@@ -417,24 +417,25 @@ class LISSTRecOP():
         files_in_path = os.listdir(data_path)                                                               #print(files) = ['track0.json', 'track1.json', 'track2.json', 'track3.json', 'track4.json']
         
         for i, file in enumerate(files_in_path):
-            with open(os.path.join(data_path, file)) as f:
-                data = json.load(f)                                                                         #print(data.keys()) = dict_keys(['J', 'frames', 'poses', 'z_axis'])
-            
-            #for Null values in data, put nan.... change from cm to meters ... do torch device stuff like in A3                              
-            poses = (torch.tensor([[np.array(sublist) if sublist is not None else np.array([np.nan,np.nan,np.nan]) for sublist in inner_list] for inner_list in data['poses']])/100).float().to(self.device)
+            if i == 0:
+                with open(os.path.join(data_path, file)) as f:
+                    data = json.load(f)                                                                         #print(data.keys()) = dict_keys(['J', 'frames', 'poses', 'z_axis'])
+                
+                #for Null values in data, put nan.... change from cm to meters ... do torch device stuff like in A3                              
+                poses = (torch.tensor([[np.array(sublist) if sublist is not None else np.array([np.nan,np.nan,np.nan]) for sublist in inner_list] for inner_list in data['poses']])/100).float().to(self.device)
 
-            print('-- input file {} out of {} files prepared, start opitmizing...'.format(i+1, len(files_in_path)))
-        
-            # optimization
-            ss = time.time()
-            results = self.recover(
-                                poses,
-                                lr = self.testconfig['lr'],
-                                n_iter = self.testconfig['n_iter'],
-                                to_numpy=True
-                        )
-            eps = time.time()-ss
-            print('-- takes {:03f} seconds'.format(eps))
+                print('-- input file {} out of {} files prepared, start opitmizing...'.format(i+1, len(files_in_path)))
+            
+                # optimization
+                ss = time.time()
+                results = self.recover(
+                                    poses,
+                                    lr = self.testconfig['lr'],
+                                    n_iter = self.testconfig['n_iter'],
+                                    to_numpy=True
+                            )
+                eps = time.time()-ss
+                print('-- takes {:03f} seconds'.format(eps))
         # for idx, key in enumerate(rec_results.keys()):
         #     rec_results[key] = results[idx]
 
