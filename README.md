@@ -7,7 +7,7 @@ This code is used to recover the 3D tracks from (OpenPose -> mv3dpose -> stitchi
 
 **Motion Prior**
 
-We already provided our motion priors in the folder /motion_prior. You can directly use them.
+We already provided our motion priors in the folder `/motion_prior`. You can directly use them.
 
 If you want to further train the motion priors yourself, use [this](https://github.com/johannesg98/LEMO). Add Enc_last_model.pkl and preprocess_stats_for_our_prior.npz to the folder /motion_prior.
 
@@ -21,7 +21,7 @@ Put all tracks in one folder and change the --data_path argument to that folder.
 ```
 python scripts/app_openpose_multiview.py --cfg_shaper=LISST_SHAPER_v2 --cfg_poser=LISST_POSER_v0 --data_path=example_input/dance
 ```
-We provided tracks in the example_input folder.
+We provided tracks in the `example_input` folder.
 
 You can find the resulting LISST .pkl file in LISST_output. Visualize it with the Blender plugin by using "Add Animation Batch".
 
@@ -35,9 +35,9 @@ You can find the resulting LISST .pkl file in LISST_output. Visualize it with th
 
 - This environment setup is the same as of Assignment 3 of the course [Digital Humans 2023](https://vlg.inf.ethz.ch/teaching/Digital-Humans.html) at ETH Zurich.
 - If you already have installed the environment, just add torchvision to your env with running
-'''
+```
 pip install torchvision
-'''
+```
 and you can skip the Intallation process.
 
 **Installation**
