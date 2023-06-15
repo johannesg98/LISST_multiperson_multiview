@@ -22,4 +22,9 @@ baselines/*
 
 .ipynb_checkpoints
 
+#Project
+blender/
+openpose_output/
+overlay/
+
 

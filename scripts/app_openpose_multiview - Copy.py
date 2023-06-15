@@ -23,9 +23,6 @@ from lisst.models.body import LISSTPoser, LISSTCore
 
 from lisst.utils.mv3dpose_joint_matching import LISST_TO_MV3DPOSE
 
-#motion prior
-from motion_prior.code.AE_sep import Enc
-
 
 
 
@@ -71,8 +68,6 @@ class LISSTRecOP():
         self.weight_sprior = self.testconfig['weight_sprior']
         self.weight_pprior = self.testconfig['weight_pprior']
         self.weight_smoothness = self.testconfig['weight_smoothness']
-
-        self.use_motion_prior = False
 
 
     def _cont2rotmat(self, rotcont):
@@ -252,15 +247,14 @@ class LISSTRecOP():
             # ...subtracts/compares with movement vectors from timestep before and after and choses the more similar movement(minimum)...
             # ...-> only sudden movements are getting penalized...continues movements are getting penalized less
             
-            weight_legs_move = 0       #usally 0
-            weight_legs_no_move = 2     #usally 2
+            weight_legs_move = 0
+            weight_legs_no_move = 3
             weight_head_move = 1
             weight_head_no_move = 0.2
             weight_back_move = 0.1
             weight_back_no_move = 0
             weight_arms_move = 10
-            weight_arms_no_move = 1     #us 0
-            less_rot = 0.1
+            weight_arms_no_move = 0
             
             
             vecs = J_rec_fk[1:, ...] - J_rec_fk[:-1, ...]
@@ -299,89 +293,10 @@ class LISSTRecOP():
             rot_loss_no_move = diff.abs().mean()
 
 
-            loss_smoothness = loc_loss_move + less_rot * rot_loss_move + loc_loss_no_move + less_rot * rot_loss_no_move
+            loss_smoothness = loc_loss_move + rot_loss_move + loc_loss_no_move + rot_loss_no_move
 
 
         return loss_smoothness
-    
-
-    def load_motion_prior(self, weight):
-        print("load motion prior...")
-        self.use_motion_prior = True
-        self.encoder = Enc(downsample=False, z_channel=64).to(self.device)
-        self.encoder.load_state_dict(torch.load('motion_prior\Enc_last_model.pkl', map_location=self.device))
-        self.encoder.eval()
-        for param in self.encoder.parameters():
-            param.requires_grad = False
-        motion_prior_stats = np.load('motion_prior\preprocess_stats_for_our_prior.npz')
-        self.motion_prior_Xmean = torch.from_numpy(motion_prior_stats['Xmean'])
-        self.motion_prior_Xstd = torch.from_numpy(motion_prior_stats['Xstd'])
-        self.motion_prior_weight = weight
-
-        print("...motion prior loaded")
-
-
-    def motion_prior_loss(self, J_rec_fk, rotmat_rec_fk):
-        """"
-        J_rec: torch.Tensor, #[t,b,p,3], the last dimension denotes the 3D location
-        rotmat_rec_fk should be [t,b,p,3,3]
-
-        """
-
-        # divide tensor in clips of length/time 40, one clip only contains one person, normalize orientation
-        clip_len = 40
-        variation_of_clip_start = 10
-        t = J_rec_fk.shape[0]
-        if t > clip_len:
-            random_start = np.random.randint(variation_of_clip_start)
-            if t - random_start < clip_len:
-                random_start = 0
-            num_clips = int((t-random_start)/clip_len)
-            clip_list = []
-            for i in range(num_clips):
-                clip_start = random_start + i * clip_len
-                clip_end = clip_start + clip_len
-                for b in range(J_rec_fk.shape[1]):
-                    clip = J_rec_fk[clip_start:clip_end,b,:31,:]                #(40,31,3)
-                    transl = clip[0,0,:]                                        #(3)
-                    rot = rotmat_rec_fk[clip_start,b,0,:,:]                     #(3,3)
-
-                    clip = clip - transl
-                    clip = torch.einsum('ij,...j->...i',rot,clip)
-                    clip = clip.reshape(clip.shape[0], -1)                      #(40,93)
-
-                    clip_list.append(clip)
-            clip_list = torch.stack(clip_list)                                   #(N,40,93)
-
-            #normalize to standard
-            clip_list = (clip_list - self.motion_prior_Xmean) / self.motion_prior_Xstd
-            clip_list = clip_list.float().permute(0,2,1).unsqueeze(1)                     #(N,1,93,40) or (N,1,d,T)
-            
-            #prep for encoder: velocity + padding
-            clip_img_v = clip_list[:, :, :, 1:] - clip_list[:, :, :, 0:-1]
-            p2d = (8, 8, 1, 1)
-            clip_img_v = F.pad(clip_img_v, p2d, 'reflect')
-            
-            motion_z, _, _, _, _, _ = self.encoder(clip_img_v)
-
-            ####### constraints on latent z
-            motion_z_v = motion_z[:, :, :, 1:] - motion_z[:, :, :, 0:-1]
-            motion_prior_smooth_loss = torch.mean(motion_z_v ** 2) * self.motion_prior_weight
-
-        else:
-            motion_prior_smooth_loss = torch.tensor([0])
-
-        return motion_prior_smooth_loss
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -430,7 +345,6 @@ class LISSTRecOP():
 
         print("posesmv3d shape: ", posesmv3d.shape)
         print("poses shape: ", poses.shape)
-
     
         #-------setup latent variables to optimize
         #- r_locs: the 3D root translations at all frames about the world coordinate. Note the first joint is the root/pelvis.
@@ -510,22 +424,17 @@ class LISSTRecOP():
             #                          cam_rotmat, cam_transl, cam_K)
             
             loss_rec = self.threeD_point_loss(poses, J_rec_fk)
-
-            if self.use_motion_prior and lateStage:
-                loss_motion_prior = self.motion_prior_loss(J_rec_fk, rotmat_rec_fk)
-            else:
-                loss_motion_prior = torch.tensor([0])
                         
             # print(loss_rec.item())
-            loss = loss_rec + lateStage * (loss_smoothness + loss_sprior + loss_pprior + loss_motion_prior)
+            loss = loss_rec + lateStage * (loss_smoothness + loss_sprior + loss_pprior)
             '''optimizer'''
             ss = time.time()
             optimizer.zero_grad()
             loss.backward(retain_graph=False)
             optimizer.step()
             if jj % 200==0 or jj==n_iter-1:
-                print('[iter_inner={:2d}] PROJ={:.3f}, SPRIOR={:.7f}, PPRIOR={:.7f}, SMOOTH={:.3f}, MotionPr={:.12f}, TIME={:.2f}'.format(
-                        jj, loss_rec.item(), loss_sprior.item(), loss_pprior.item(), loss_smoothness.item(), loss_motion_prior.item(),
+                print('[iter_inner={:2d}] PROJ={:.3f}, SPRIOR={:.7f}, PPRIOR={:.7f}, SMOOTH={:.3f}, TIME={:.2f}'.format(
+                        jj, loss_rec.item(), loss_sprior.item(), loss_pprior.item(), loss_smoothness.item(),
                         time.time()-ss))
             scheduler.step()
         
@@ -629,15 +538,13 @@ class LISSTRecOP():
             all_poses[:begin, i, :, :] = all_poses[begin, i, :, :]
             all_poses[end+1:, i, :, :] = all_poses[end, i, :, :]
 
+            limit_render_length = True
+            if limit_render_length:
+                all_poses = all_poses[:200, ...]
 
             print("loaded track {} with shape: ".format(i), poses.shape)
 
-
-        #only works for one person i think...maybe not
-        limit_render_length = False
-        if limit_render_length:
-            all_poses = all_poses[:200, ...]
-
+        
         
         #old stuff
         # files_in_path = os.listdir(data_path)
@@ -699,7 +606,7 @@ class LISSTRecOP():
         ### save to file
         outfilename = os.path.join(
                             'LISST_output',
-                            'output'
+                            'danceposeprior0k1legs3longer'
                         )
         if not os.path.exists(outfilename):
             os.makedirs(outfilename)
@@ -722,7 +629,7 @@ class LISSTRecOP():
 
 if __name__ == '__main__':
     """ example command
-    python scripts/app_openpose_multiview.py --cfg_shaper=LISST_SHAPER_v2 --cfg_poser=LISST_POSER_v0 --data_path=example_inout/dance
+    python scripts/app_openpose_multiview.py --cfg_shaper=LISST_SHAPER_v2 --cfg_poser=LISST_POSER_v0 --data_path=openpose_output/pizza
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg_shaper', default=None, required=True)
@@ -758,14 +665,13 @@ if __name__ == '__main__':
     testcfg['lr'] = 0.1
     testcfg['n_iter'] = 2000
     testcfg['weight_sprior'] = 0.0
-    testcfg['weight_pprior'] = 0.2           #0.2 for most, 0.05 for dance?
-    testcfg['weight_smoothness'] = 0.0       #originally 100, now set in def loss_smoothness
+    testcfg['weight_pprior'] = 0.1
+    testcfg['weight_smoothness'] = 0.06       #originally 100
     
     """model and testop"""
     testop = LISSTRecOP(shapeconfig=modelcfg_shaper, poseconfig=modelcfg_poser, testconfig=testcfg)
     # testop.gather_mediapipe_data_for_zju(data_path=args.data_path)
     testop.build_model()
-    testop.load_motion_prior(weight = 1000000)
     testop.openpose_to_pickle(data_path=args.data_path) # from test views
     
     

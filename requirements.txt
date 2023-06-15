@@ -18,3 +18,7 @@ torchgeometry
 tensorboardX
 pyntcloud
 mediapy
+
+
+#added by grup 2 project
+torchvision
