@@ -6,11 +6,13 @@ This code is used to recover the 3D tracks from (OpenPose -> mv3dpose -> stitchi
 ## Run it
 
 **Motion Prior**
+
 We already provided our motion priors in the folder /motion_prior. You can directly use them.
 
 If you want to further train the motion priors yourself, use [this](https://github.com/johannesg98/LEMO). Add Enc_last_model.pkl and preprocess_stats_for_our_prior.npz to the folder /motion_prior.
 
 **Run**
+
 To run the script, activate the environment by running:
 ```
 ..\*name-of-environment*\Scripts\activate
@@ -30,6 +32,7 @@ You can find the resulting LISST .pkl file in LISST_output. Visualize it with th
 ## Setup
 
 **Notice**
+
 - This environment setup is the same as of Assignment 3 of the course [Digital Humans 2023](https://vlg.inf.ethz.ch/teaching/Digital-Humans.html) at ETH Zurich.
 - If you already have installed the environment, just add torchvision to your env with running
 '''
