@@ -1,7 +1,7 @@
 
 # Digital Humans Project: Learning Motion Priors for LISST Multi-Person Capturing
 
-This code is used to recover the 3D tracks from (OpenPose -> mv3dpose -> stitching algorithm). It is based on assignment 3 of the Digital Humans Course of ETH Zürich. An optimizer uses the 3D tracks as well as motion-, pose- and shape-priros and smoothening functions. As an output we get LISST sequences that can be visualized in Blender (Plug-In in the "Setup" part).
+This code is used to recover the 3D tracks from (OpenPose -> mv3dpose -> stitching algorithm). It is based on assignment 3 of the Digital Humans Course of ETH Zürich. An optimizer uses the 3D tracks as well as motion-, pose- and shape-priros and smoothening functions. As an output we get LISST sequences that can be visualized in Blender (Plugin in the "Setup" part).
 
 ## Run it
 
@@ -12,13 +12,13 @@ If you want to further train the motion priors yourself, use [this](https://gith
 
 **Run**
 To run the script, activate the environment by running:
-'''
+```
 ..\*name-of-environment*\Scripts\activate
-'''
+```
 Put all tracks in one folder and change the --data_path argument to that folder. The folder should not contain enything else. Then run
-'''
+```
 python scripts/app_openpose_multiview.py --cfg_shaper=LISST_SHAPER_v2 --cfg_poser=LISST_POSER_v0 --data_path=example_input/dance
-'''
+```
 We provided tracks in the example_input folder.
 
 You can find the resulting LISST .pkl file in LISST_output. Visualize it with the Blender plugin by using "Add Animation Batch".
