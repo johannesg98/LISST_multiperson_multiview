@@ -1,7 +1,7 @@
 
 # Digital Humans Project: Learning Motion Priors for LISST Multi-Person Capturing
 
-This code is used to recover the 3D tracks from (OpenPose -> mv3dpose -> stitching algorithm). It is based on assignment 3 of the Digital Humans Course of ETH Zürich. An optimizer uses the 3D tracks as well as motion-, pose- and shape-priros and smoothening functions. As an output we get LISST sequences that can be visualized in Blender (Plugin in the "Setup" part).
+This code is used to recover the 3D tracks from (OpenPose -> mv3dpose -> stitching algorithm). It is based on assignment 3 of the Digital Humans Course of ETH Zürich [Link](https://github.com/Digital-Humans-23/a3). An optimizer uses the 3D tracks as well as motion-, pose- and shape-priros and smoothening functions. As an output we get LISST sequences that can be visualized in Blender (Plugin in the "Setup" part).
 
 ## Run it
 
