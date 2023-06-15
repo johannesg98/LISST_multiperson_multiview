@@ -2,7 +2,7 @@
 __pycache__
 *.pyc
 *.egg-info
-*.pkl
+
 
 data/1_mediapipe/
 data/cam_params.json
@@ -26,5 +26,6 @@ baselines/*
 blender/
 openpose_output/
 overlay/
+LISST_output/
 
 
